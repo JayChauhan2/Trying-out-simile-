@@ -564,35 +564,14 @@
   </section>
 
   <main>
-    <!-- Left Panel: Raw Prompt Split Editor -->
+    <!-- Left Panel: Raw Prompt Unified Editor -->
     <section class="panel">
-      <div class="panel-title">Prompt Sections Configuration</div>
+      <div class="panel-title">User Prompt Configuration</div>
 
       <!-- Configurable Demographic Box -->
       <div class="input-group">
-        <label for="raw-demographics">1. Respondent Demographics</label>
-        <textarea id="raw-demographics" style="height: 160px;">You are a survey respondent with the following demographic profile:
-- Age: 17
-- Gender: Male
-- Education: Undergraduate degree
-- Employment: Employed as a founder at a startup that creates AI-native strategy games
-- Location: Virginia
-- Income: Negligible
-
-Read the question below and answer exactly as this person would. Follow the response instructions precisely.</textarea>
-      </div>
-
-      <!-- Dynamic Scenario Box -->
-      <div class="input-group">
-        <label for="raw-scenario-text">2. Scenario Details (Candidate Attributes)</label>
-        <textarea id="raw-scenario-text" style="height: 200px;" oninput="parseCandidates()"></textarea>
-      </div>
-
-      <!-- Instruction Footer Box -->
-      <div class="input-group">
-        <label for="raw-question-footer">3. Decision Question & Format Instructions</label>
-        <textarea id="raw-question-footer" style="height: 90px;">If you had to choose between them, which of the two candidates should be admitted to the halfway house in your neighborhood?
-Only return 1 to choose the first candidate; 2 to choose the second candidate, nothing else.</textarea>
+        <label for="raw-user-prompt">User Prompt (Entire Text)</label>
+        <textarea id="raw-user-prompt" style="height: 520px;" oninput="parseCandidates()"></textarea>
       </div>
 
       <!-- System Prompt Box -->
@@ -823,6 +802,22 @@ Candidate 2: Sex: Male; Crime: Armed robbery; Education: No high school diploma;
       }
     ];
 
+    const defaultHeader = `You are a survey respondent with the following demographic profile:
+- Age: 17
+- Gender: Male
+- Education: Undergraduate degree
+- Employment: Employed as a founder at a startup that creates AI-native strategy games
+- Location: Virginia
+- Income: Negligible
+
+Read the question below and answer exactly as this person would. Follow the response instructions precisely.`;
+
+    const defaultFooter = `If you had to choose between them, which of the two candidates should be admitted to the halfway house in your neighborhood?
+Only return 1 to choose the first candidate; 2 to choose the second candidate, nothing else.`;
+
+    const boundary1 = "Read the question below and answer exactly as this person would. Follow the response instructions precisely.";
+    const boundary2 = "If you had to choose between them, which of the two candidates should be admitted to the halfway house in your neighborhood?";
+
     // Build the grid of buttons
     function initScenarioGrid() {
       const grid = document.getElementById('scenario-btn-grid');
@@ -834,8 +829,10 @@ Candidate 2: Sex: Male; Crime: Armed robbery; Education: No high school diploma;
         </button>
       `).join('');
 
-      // Prepopulate Scenario 1
-      selectScenario(0);
+      // Prepopulate the single textarea with Scenario 1
+      const textarea = document.getElementById('raw-user-prompt');
+      textarea.value = defaultHeader + "\n\n" + scenarios[0].text + "\n\n" + defaultFooter;
+      parseCandidates();
     }
 
     function selectScenario(index) {
@@ -844,26 +841,40 @@ Candidate 2: Sex: Male; Crime: Armed robbery; Education: No high school diploma;
       const activeBtn = document.getElementById(`sc-btn-${index}`);
       if (activeBtn) activeBtn.classList.add('active');
 
-      // Update Scenario text area
-      document.getElementById('raw-scenario-text').value = scenarios[index].text;
+      const newScenario = scenarios[index].text;
+      const textarea = document.getElementById('raw-user-prompt');
+      const currentText = textarea.value;
+
+      const idx1 = currentText.indexOf(boundary1);
+      const idx2 = currentText.indexOf(boundary2);
+
+      if (idx1 !== -1 && idx2 !== -1 && idx2 > idx1) {
+        // Surgically swap out the middle portion (scenario details) and preserve demographics/footer edits
+        const header = currentText.substring(0, idx1 + boundary1.length);
+        const footer = currentText.substring(idx2);
+        textarea.value = header + "\n\n" + newScenario + "\n\n" + footer;
+      } else {
+        // Fallback: replace everything
+        textarea.value = defaultHeader + "\n\n" + newScenario + "\n\n" + defaultFooter;
+      }
 
       // Update visualizer comparison cards
       parseCandidates();
     }
 
-    // Parse Candidate descriptions for visual cards
+    // Parse Candidate descriptions for visual cards from the unified textarea
     function parseCandidates() {
-      const scenarioText = document.getElementById('raw-scenario-text').value;
+      const fullText = document.getElementById('raw-user-prompt').value;
       
       let cand1Text = "Candidate 1 description not parsed.";
       let cand2Text = "Candidate 2 description not parsed.";
 
       // Parsing logic matching the standard conjoint structures
       const cand1Regex = /Candidate 1:\s*([^]*?)(?=Candidate 2:|$)/i;
-      const cand2Regex = /Candidate 2:\s*([^]*?)(?=$)/i;
+      const cand2Regex = /Candidate 2:\s*([^]*?)(?=If you had|$)/i;
 
-      const m1 = scenarioText.match(cand1Regex);
-      const m2 = scenarioText.match(cand2Regex);
+      const m1 = fullText.match(cand1Regex);
+      const m2 = fullText.match(cand2Regex);
 
       if (m1 && m1[1]) cand1Text = m1[1].trim().replace(/[;.]\s*$/g, '').split(';').join('<br>• ');
       if (m2 && m2[1]) cand2Text = m2[1].trim().replace(/[;.]\s*$/g, '').split(';').join('<br>• ');
@@ -875,13 +886,7 @@ Candidate 2: Sex: Male; Crime: Armed robbery; Education: No high school diploma;
     // Run conjoint prediction
     async function runPrediction() {
       const systemPrompt = document.getElementById('raw-system-prompt').value;
-      
-      // Concatenate the sections to create the full user prompt
-      const demographics = document.getElementById('raw-demographics').value.trim();
-      const scenario = document.getElementById('raw-scenario-text').value.trim();
-      const question = document.getElementById('raw-question-footer').value.trim();
-
-      const fullUserPrompt = demographics + "\n\n" + scenario + "\n\n" + question;
+      const fullUserPrompt = document.getElementById('raw-user-prompt').value;
       
       const predictBtn = document.getElementById('predict-btn');
       
