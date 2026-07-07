@@ -1,4 +1,5 @@
 import os
+import json
 import time
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse
@@ -8,8 +9,9 @@ from mlx_lm import load, generate
 
 app = FastAPI(title="Socrates Local Web App")
 
-# Model path
+# Paths
 MODEL_PATH = "/Users/jaychauhan/socrates-qwen2.5-14b-dpo-mlx-q4"
+FEEDBACK_FILE = os.path.join(os.path.dirname(__file__), "feedback.json")
 
 print("Loading MLX model...")
 start_time = time.time()
@@ -20,6 +22,10 @@ class PredictionRequest(BaseModel):
     system_prompt: str
     user_prompt: str
     max_tokens: int = 50
+
+class FeedbackRequest(BaseModel):
+    scenario_index: int
+    status: str  # "correct", "incorrect", or ""
 
 @app.post("/api/predict")
 async def predict(req: PredictionRequest):
@@ -32,7 +38,6 @@ async def predict(req: PredictionRequest):
         prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
         
         start_inference = time.time()
-        # MLX generate returns the text
         response = generate(model, tokenizer, prompt=prompt, max_tokens=req.max_tokens)
         duration = time.time() - start_inference
         
@@ -45,6 +50,35 @@ async def predict(req: PredictionRequest):
     except Exception as e:
         import traceback
         traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/feedback")
+async def get_feedback():
+    if not os.path.exists(FEEDBACK_FILE):
+        return {}
+    try:
+        with open(FEEDBACK_FILE, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        return {}
+
+@app.post("/api/feedback")
+async def save_feedback(req: FeedbackRequest):
+    data = {}
+    if os.path.exists(FEEDBACK_FILE):
+        try:
+            with open(FEEDBACK_FILE, "r") as f:
+                data = json.load(f)
+        except Exception:
+            data = {}
+            
+    data[str(req.scenario_index)] = req.status
+    
+    try:
+        with open(FEEDBACK_FILE, "w") as f:
+            json.dump(data, f, indent=2)
+        return {"status": "success"}
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 # Serve the static index.html

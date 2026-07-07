@@ -155,6 +155,7 @@
       display: flex;
       flex-direction: column;
       gap: 4px;
+      position: relative;
     }
 
     .scenario-btn:hover {
@@ -180,6 +181,23 @@
 
     .scenario-btn.active .scenario-btn-num {
       color: var(--accent-cyan);
+    }
+
+    /* Feedback Indicators on Buttons */
+    .scenario-badge-status {
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .scenario-badge-status.correct {
+      color: #10b981;
+      text-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
+    }
+
+    .scenario-badge-status.incorrect {
+      color: #ef4444;
+      text-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
     }
 
     /* Main Grid Layout */
@@ -414,7 +432,7 @@
       flex-direction: column;
       background: rgba(255, 255, 255, 0.015);
       border: 1px solid var(--glass-border);
-      padding: 24px;
+      padding: 20px;
       border-radius: 12px;
       text-align: center;
       gap: 6px;
@@ -423,13 +441,78 @@
 
     .prediction-large-number {
       font-family: var(--font-outfit);
-      font-size: 64px;
+      font-size: 60px;
       font-weight: 900;
       line-height: 1;
       background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-purple) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.25));
+    }
+
+    /* Feedback buttons design */
+    .feedback-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--glass-border);
+      width: 100%;
+    }
+
+    .feedback-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .feedback-buttons {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+      max-width: 280px;
+    }
+
+    .feedback-btn {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--glass-border);
+      color: var(--text-muted);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-family: var(--font-inter);
+    }
+
+    .feedback-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .feedback-btn.correct.active {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: #10b981;
+      color: #10b981;
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
+    }
+
+    .feedback-btn.incorrect.active {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: #ef4444;
+      color: #ef4444;
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.2);
     }
 
     .stats-row {
@@ -568,7 +651,7 @@
     <section class="panel">
       <div class="panel-title">User Prompt Configuration</div>
 
-      <!-- Configurable Demographic Box -->
+      <!-- Configurable Box -->
       <div class="input-group">
         <label for="raw-user-prompt">User Prompt (Entire Text)</label>
         <textarea id="raw-user-prompt" style="height: 520px;" oninput="parseCandidates()"></textarea>
@@ -615,6 +698,19 @@
           <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted);">Predicted Choice</div>
           <div id="large-result-number" class="prediction-large-number">1</div>
           <div id="prediction-label" style="font-size: 13px; font-weight: 600; color: #fff;">Candidate 1 Selected</div>
+          
+          <!-- Feedback buttons container -->
+          <div class="feedback-container">
+            <div class="feedback-label">Is this prediction correct?</div>
+            <div class="feedback-buttons">
+              <button id="fb-correct-btn" class="feedback-btn correct" onclick="submitFeedback('correct')">
+                <span style="font-size: 13px;">✓</span> Correct
+              </button>
+              <button id="fb-incorrect-btn" class="feedback-btn incorrect" onclick="submitFeedback('incorrect')">
+                <span style="font-size: 13px;">✗</span> Incorrect
+              </button>
+            </div>
+          </div>
         </div>
 
         <div class="prediction-header">Candidate Profiles in Active Scenario</div>
@@ -662,6 +758,7 @@
 
   <script>
     let history = [];
+    let feedbacks = {}; // Stores { scenarioIndex: "correct" | "incorrect" | "" }
 
     // Define 15 completely different conjoint scenarios
     const scenarios = [
@@ -864,9 +961,12 @@ Read the question below and answer exactly as this person would. Follow the resp
       const grid = document.getElementById('scenario-btn-grid');
       grid.innerHTML = scenarios.map((s, index) => `
         <button id="sc-btn-${index}" class="scenario-btn ${index === 0 ? 'active' : ''}" onclick="selectScenario(${index})">
-          <span class="scenario-btn-num">Scenario ${index + 1}</span>
-          <span style="font-weight: 600; font-size: 13px; color:#fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${s.title}</span>
-          <span style="font-size: 10px; color:var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${s.desc}</span>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; pointer-events: none;">
+            <span class="scenario-btn-num">Scenario ${index + 1}</span>
+            <span class="scenario-badge-status" id="sc-status-${index}"></span>
+          </div>
+          <span style="font-weight: 600; font-size: 13px; color:#fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none;">${s.title}</span>
+          <span style="font-size: 10px; color:var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none;">${s.desc}</span>
         </button>
       `).join('');
 
@@ -874,6 +974,49 @@ Read the question below and answer exactly as this person would. Follow the resp
       const textarea = document.getElementById('raw-user-prompt');
       textarea.value = defaultHeader + "\n\n" + scenarios[0].text;
       parseCandidates();
+      
+      // Load saved feedback
+      loadFeedback();
+    }
+
+    // Load feedback from server, merge with localStorage
+    async function loadFeedback() {
+      try {
+        const response = await fetch('/api/feedback');
+        if (response.ok) {
+          const serverFeedbacks = await response.ok ? await response.json() : {};
+          feedbacks = serverFeedbacks;
+        }
+      } catch (err) {
+        console.warn("Failed to load feedback from server, using local storage", err);
+      }
+
+      // Merge with browser local storage backup
+      const local = JSON.parse(localStorage.getItem('socrates_feedbacks') || '{}');
+      feedbacks = { ...local, ...feedbacks }; // Server takes priority
+
+      // Save merged version back to local storage
+      localStorage.setItem('socrates_feedbacks', JSON.stringify(feedbacks));
+
+      // Apply to UI badges
+      for (let i = 0; i < 15; i++) {
+        updateBadgeUI(i);
+      }
+    }
+
+    function updateBadgeUI(index) {
+      const badge = document.getElementById(`sc-status-${index}`);
+      if (!badge) return;
+
+      const status = feedbacks[index.toString()] || "";
+      badge.className = "scenario-badge-status " + status;
+      if (status === "correct") {
+        badge.innerText = "✓";
+      } else if (status === "incorrect") {
+        badge.innerText = "✗";
+      } else {
+        badge.innerText = "";
+      }
     }
 
     function selectScenario(index) {
@@ -899,6 +1042,59 @@ Read the question below and answer exactly as this person would. Follow the resp
 
       // Update visualizer comparison cards
       parseCandidates();
+
+      // Update feedback buttons selection
+      updateFeedbackButtonsUI(index);
+    }
+
+    function updateFeedbackButtonsUI(index) {
+      const correctBtn = document.getElementById('fb-correct-btn');
+      const incorrectBtn = document.getElementById('fb-incorrect-btn');
+      if (!correctBtn || !incorrectBtn) return;
+
+      correctBtn.classList.remove('active');
+      incorrectBtn.classList.remove('active');
+
+      const status = feedbacks[index.toString()] || "";
+      if (status === "correct") {
+        correctBtn.classList.add('active');
+      } else if (status === "incorrect") {
+        incorrectBtn.classList.add('active');
+      }
+    }
+
+    // Submit feedback
+    async function submitFeedback(status) {
+      const activeBtn = document.querySelector('.scenario-btn.active');
+      if (!activeBtn) return;
+
+      const activeIndex = parseInt(activeBtn.id.replace('sc-btn-', ''));
+      const indexStr = activeIndex.toString();
+
+      // Toggle functionality: if clicking already selected, clear it
+      if (feedbacks[indexStr] === status) {
+        status = "";
+      }
+
+      feedbacks[indexStr] = status;
+      localStorage.setItem('socrates_feedbacks', JSON.stringify(feedbacks));
+      updateBadgeUI(activeIndex);
+      updateFeedbackButtonsUI(activeIndex);
+
+      try {
+        await fetch('/api/feedback', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            scenario_index: activeIndex,
+            status: status
+          })
+        });
+      } catch (err) {
+        console.error("Failed to save feedback to server", err);
+      }
     }
 
     // Parse Candidate descriptions for visual cards from the unified textarea
@@ -983,6 +1179,13 @@ Read the question below and answer exactly as this person would. Follow the resp
         }
 
         document.getElementById('stat-latency').innerText = data.latency_seconds.toFixed(2) + 's';
+
+        // Highlight feedback buttons according to current status
+        const activeBtn = document.querySelector('.scenario-btn.active');
+        if (activeBtn) {
+          const activeIndex = parseInt(activeBtn.id.replace('sc-btn-', ''));
+          updateFeedbackButtonsUI(activeIndex);
+        }
 
         // Add to history
         addHistoryItem(pred, data.latency_seconds);
