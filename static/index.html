@@ -663,142 +663,187 @@
   <script>
     let history = [];
 
-    // Define 15 Conjoint Scenarios
+    // Define 15 completely different conjoint scenarios
     const scenarios = [
       {
-        title: "Baseline (Default)",
-        desc: "Burglary: Latino, 35 vs. Black, 22",
+        title: "Halfway House",
+        desc: "Neighborhood felon admission",
         text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
 
 Candidate 1: Sex: Male; Crime: Nonviolent burglary; Education: Vocational training; Race: Latino; Age: 35 years old; Previous work: Seasonal/part-time employment; Job seeking: Going to temp agencies; Family status: Divorced, no children.
 
-Candidate 2: Sex: Male; Crime: Nonviolent burglary; Education: GED; Race: Black; Age: 22 years old; Previous work: Steady full-time employment; Job seeking: Submitting resumes; Family status: Divorced, no children.`
+Candidate 2: Sex: Male; Crime: Nonviolent burglary; Education: GED; Race: Black; Age: 22 years old; Previous work: Steady full-time employment; Job seeking: Submitting resumes; Family status: Divorced, no children.
+
+If you had to choose between them, which of the two candidates should be admitted to the halfway house in your neighborhood?
+Only return 1 to choose the first candidate; 2 to choose the second candidate, nothing else.`
       },
       {
-        title: "Crime Severity",
-        desc: "Burglary vs. Violent Assault",
-        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+        title: "Software Engineer",
+        desc: "Technical skill vs. Communication",
+        text: `You are hiring a software engineer to join your early-stage team. You must choose between two final candidates:
 
-Candidate 1: Sex: Male; Crime: Nonviolent burglary; Education: High school graduate; Race: White; Age: 28 years old; Previous work: Unemployed; Job seeking: Enrolled in job training; Family status: Never married, no children.
+Candidate 1: Technical skill: Exceptional (ranked top 1% on coding tests); Communication: Poor (struggles to explain logic, quiet, dislikes meetings); Experience: 4 years; Work style: Solitary; Expected salary: Moderate.
 
-Candidate 2: Sex: Male; Crime: Violent assault; Education: High school graduate; Race: White; Age: 28 years old; Previous work: Unemployed; Job seeking: Enrolled in job training; Family status: Never married, no children.`
+Candidate 2: Technical skill: Solid (above average, but needs guidance on complex architecture); Communication: Exceptional (highly collaborative, explains technical terms to business stakeholders); Experience: 3 years; Work style: Team-oriented; Expected salary: Moderate.
+
+If you had to choose between them, which of the two candidates would you hire to work under you?
+Only return 1 to choose the first candidate; 2 to choose the second candidate, nothing else.`
       },
       {
-        title: "Race (Black vs White)",
-        desc: "Controlled match: Black vs. White",
-        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+        title: "Roommate Selection",
+        desc: "Cleanliness vs. Sociability",
+        text: `You are renting a two-bedroom apartment and need to select a roommate to sign the lease with you. You have two applicants:
 
-Candidate 1: Sex: Male; Crime: Nonviolent burglary; Education: GED; Race: Black; Age: 30 years old; Previous work: Seasonal/part-time employment; Job seeking: Submitting resumes; Family status: Single parent, one child.
+Candidate 1: Cleanliness: Spotless (obsessively neat, cleans daily); Hobbies: Low shared interests; Sociability: Very low (introverted, rarely speaks, dislikes guests); Schedule: Regular office hours.
 
-Candidate 2: Sex: Male; Crime: Nonviolent burglary; Education: GED; Race: White; Age: 30 years old; Previous work: Seasonal/part-time employment; Job seeking: Submitting resumes; Family status: Single parent, one child.`
+Candidate 2: Cleanliness: Messy (dishes left overnight, leaves clothes around); Hobbies: High shared interests (plays the same games, shares same social group); Sociability: High (friendly, invites friends over occasionally); Schedule: Flexible work-from-home.
+
+If you had to choose between them, which of the two candidates would you select as your roommate?
+Only return 1 to choose the first candidate; 2 to choose the second candidate, nothing else.`
       },
       {
-        title: "Race (Latino vs Asian)",
-        desc: "Female drug case: Latino vs. Asian",
-        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+        title: "Startup Co-founder",
+        desc: "Business Lead vs. Tech Lead",
+        text: `You are launching a new startup and need to pick a co-founder to share equity and build the company with. You have two options:
 
-Candidate 1: Sex: Female; Crime: Drug possession; Education: High school graduate; Race: Latino; Age: 25 years old; Previous work: Unemployed; Job seeking: Going to temp agencies; Family status: Never married, no children.
+Candidate 1: Focus: Business & Growth (expert in marketing, sales, fundraising, secured $50k in angel interest); Technical skills: None; Experience: Former consultant; Work ethic: High; Ownership expectation: 50%.
 
-Candidate 2: Sex: Female; Crime: Drug possession; Education: High school graduate; Race: Asian; Age: 25 years old; Previous work: Unemployed; Job seeking: Going to temp agencies; Family status: Never married, no children.`
+Candidate 2: Focus: Technical & Product (expert full-stack developer, can build the MVP in 4 weeks); Business skills: Minimal (prefers coding, introverted); Experience: Former tech lead; Work ethic: High; Ownership expectation: 50%.
+
+If you had to choose between them, which of the two candidates would you partner with as your co-founder?
+Only return 1 to choose the first candidate; 2 to choose the second candidate, nothing else.`
       },
       {
-        title: "Gender Comparison",
-        desc: "Male vs. Female Fraud case",
-        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+        title: "Bank Loan Approval",
+        desc: "Collateral vs. Credit & Plan",
+        text: `You are a loan officer at a local bank evaluating two applicants for a $100,000 small business loan:
 
-Candidate 1: Sex: Male; Crime: Fraud; Education: College degree; Race: White; Age: 42 years old; Previous work: Steady full-time employment; Job seeking: Submitting resumes; Family status: Married, two children.
+Candidate 1: Collateral: High (owns property worth $200k to secure the loan); Income/Cash Flow: Low (startup has thin margins, high risk of short-term payment default); Credit Score: 680; Business Plan: Average.
 
-Candidate 2: Sex: Female; Crime: Fraud; Education: College degree; Race: White; Age: 42 years old; Previous work: Steady full-time employment; Job seeking: Submitting resumes; Family status: Married, two children.`
+Candidate 2: Collateral: None (no physical assets to secure the loan); Income/Cash Flow: High (strong, consistent monthly revenue from consulting contracts); Credit Score: 740; Business Plan: Exceptional.
+
+If you had to choose between them, which of the two candidates should be approved for the business loan?
+Only return 1 to choose the first candidate; 2 to choose the second candidate, nothing else.`
       },
       {
-        title: "Age Comparison",
-        desc: "Burglary case: 20 vs. 58 yrs old",
-        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+        title: "College Admission",
+        desc: "Elite Athletics vs. Academics",
+        text: `You are on the admissions committee at a competitive university deciding on the final spot in the incoming class:
 
-Candidate 1: Sex: Male; Crime: Nonviolent burglary; Education: GED; Race: Black; Age: 20 years old; Previous work: Seasonal/part-time employment; Job seeking: Going to temp agencies; Family status: Never married, no children.
+Candidate 1: Academics: Average (3.2 GPA, 1150 SAT); Extracurriculars: Elite Athlete (national champion in track, heavily recruited by the university's sports teams); Essay: Average; Recommendation Letters: Enthusiastic from athletic director.
 
-Candidate 2: Sex: Male; Crime: Nonviolent burglary; Education: GED; Race: Black; Age: 58 years old; Previous work: Seasonal/part-time employment; Job seeking: Going to temp agencies; Family status: Never married, no children.`
+Candidate 2: Academics: Exceptional (4.0 GPA, 1550 SAT); Extracurriculars: Standard school clubs (debate, chess club, no leadership roles); Essay: Excellent; Recommendation Letters: Enthusiastic from physics and math teachers.
+
+If you had to choose between them, which of the two candidates would you admit to the university?
+Only return 1 to choose the first candidate; 2 to choose the second candidate, nothing else.`
       },
       {
-        title: "Employment Status",
-        desc: "Car theft: Unemployed vs. Full-time",
-        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+        title: "Primary Care Doctor",
+        desc: "Expertise vs. Bedside Manner",
+        text: `You need to choose a new primary care physician to handle your health checks and medical concerns:
 
-Candidate 1: Sex: Female; Crime: Car theft; Education: Vocational training; Race: Latina; Age: 27 years old; Previous work: Unemployed; Job seeking: Submitting resumes; Family status: Divorced, no children.
+Candidate 1: Expertise: World-renowned researcher (wrote textbooks on internal medicine, top diagnostic accuracy); Bedside Manner: Cold (abrupt, dismissive of questions, spends minimal time talking); Wait time: 1 hour; Availability: Hard to book.
 
-Candidate 2: Sex: Female; Crime: Car theft; Education: Vocational training; Race: Latina; Age: 27 years old; Previous work: Steady full-time employment; Job seeking: Submitting resumes; Family status: Divorced, no children.`
+Candidate 2: Expertise: Average practitioner (standard training, refers complex cases to specialists); Bedside Manner: Exceptional (empathetic, listens carefully to all your symptoms, explains treatments clearly); Wait time: 10 minutes; Availability: Easy to book.
+
+If you had to choose between them, which of the two candidates would you select as your primary doctor?
+Only return 1 to choose the first candidate; 2 to choose the second candidate, nothing else.`
       },
       {
-        title: "Education Level",
-        desc: "No HS Diploma vs. College Grad",
-        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+        title: "UI/UX Designer",
+        desc: "High Quality/Price vs. Fast/Cheap",
+        text: `You are hiring a freelance designer to design the landing page and interface for your new mobile app:
 
-Candidate 1: Sex: Male; Crime: Drug possession; Education: No high school diploma; Race: White; Age: 31 years old; Previous work: Seasonal/part-time employment; Job seeking: Going to temp agencies; Family status: Single parent, two children.
+Candidate 1: Portfolio: Masterpiece level (incredible aesthetics, animations, custom assets); Quote: $5,000; Turnaround: 4 weeks; Communication: Slow.
 
-Candidate 2: Sex: Male; Crime: Drug possession; Education: College degree; Race: White; Age: 31 years old; Previous work: Seasonal/part-time employment; Job seeking: Going to temp agencies; Family status: Single parent, two children.`
+Candidate 2: Portfolio: Decent/Standard (uses clean modern templates, looks professional but not highly unique); Quote: $1,200; Turnaround: 1 week; Communication: Fast.
+
+If you had to choose between them, which of the two candidates would you hire for your design project?
+Only return 1 to choose the first candidate; 2 to choose the second candidate, nothing else.`
       },
       {
-        title: "Family Status",
-        desc: "Single vs. Married with Kids",
-        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+        title: "Investment Fund",
+        desc: "Crypto Startups vs. Real Estate",
+        text: `You have $10,000 to invest for a 5-year timeline. You must choose between placing your capital into one of two funds:
 
-Candidate 1: Sex: Male; Crime: Nonviolent burglary; Education: Vocational training; Race: Latino; Age: 33 years old; Previous work: Steady full-time employment; Job seeking: Submitting resumes; Family status: Never married, no children.
+Candidate 1: Fund Type: Early-Stage Cryptocurrency & Web3 Startups; Risk: Very High (potential to lose 90% of principal); Target Return: 10x - 50x; Liquidity: Low (locked up for 5 years).
 
-Candidate 2: Sex: Male; Crime: Nonviolent burglary; Education: Vocational training; Race: Latino; Age: 33 years old; Previous work: Steady full-time employment; Job seeking: Submitting resumes; Family status: Married, three children.`
+Candidate 2: Fund Type: Multi-Family Real Estate Syndication; Risk: Low (backed by physical properties, stable cash flow); Target Return: 8% - 12% annually; Liquidity: Moderate (quarterly payouts).
+
+If you had to choose between them, which of the two investment options would you allocate your capital to?
+Only return 1 to choose the first option; 2 to choose the second option, nothing else.`
       },
       {
-        title: "Military Veteran",
-        desc: "Assault case: Veteran vs. Unemployed",
-        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+        title: "Political Candidate",
+        desc: "Experienced vs. Grassroots Reformist",
+        text: `You are voting in a local election for your city council representative. You have two candidates:
 
-Candidate 1: Sex: Male; Crime: Violent assault; Education: High school graduate; Race: White; Age: 40 years old; Previous work: Military veteran; Job seeking: Enrolled in job training; Family status: Married, one child.
+Candidate 1: Experience: 16 years in city council (knows local bureaucracy, strong ties with local business owners); Platform: Status quo preservation, fiscal conservatism; Age: 64 years old; Style: Traditional politician.
 
-Candidate 2: Sex: Male; Crime: Violent assault; Education: High school graduate; Race: White; Age: 40 years old; Previous work: Unemployed (no military service); Job seeking: Enrolled in job training; Family status: Married, one child.`
+Candidate 2: Experience: None in government (former community organizer, grassroots activist); Platform: Major reforms in housing policy, green transit, corporate taxation; Age: 29 years old; Style: Disruptive reformist.
+
+If you had to choose between them, which of the two candidates would you vote for in the election?
+Only return 1 to choose the first candidate; 2 to choose the second candidate, nothing else.`
       },
       {
-        title: "Job Seeking Effort",
-        desc: "Job training vs. Not looking",
-        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+        title: "Database Provider",
+        desc: "Enterprise AWS vs. Indie Cloud Startup",
+        text: `You are choosing a cloud database provider for your growing startup:
 
-Candidate 1: Sex: Female; Crime: Fraud; Education: College degree; Race: Asian; Age: 29 years old; Previous work: Unemployed; Job seeking: Enrolled in full-time job training; Family status: Never married, no children.
+Candidate 1: Vendor: Established Tech Giant (AWS/Google Cloud, highly reliable, 99.999% uptime); Pricing: Expensive (high usage costs, complex licensing); Support: Slow (requires expensive tier for direct agent help); Features: Extensive.
 
-Candidate 2: Sex: Female; Crime: Fraud; Education: College degree; Race: Asian; Age: 29 years old; Previous work: Unemployed; Job seeking: Not currently looking for work; Family status: Never married, no children.`
+Candidate 2: Vendor: Newer Indie Cloud Startup (agile, tailored developer experience, simple billing); Pricing: Highly cost-effective (50% cheaper); Uptime: 99.9% (occasional minor outages); Support: Excellent (direct slack channel with developers).
+
+If you had to choose between them, which of the two vendors would you select to host your database?
+Only return 1 to choose the first vendor; 2 to choose the second vendor, nothing else.`
       },
       {
-        title: "Drug vs. Armed Robbery",
-        desc: "Varying crimes: Drug vs. Violent theft",
-        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+        title: "Apartment Rental",
+        desc: "Prime Location vs. Luxury Space",
+        text: `You are signing a 1-year lease on an apartment in a major city:
 
-Candidate 1: Sex: Male; Crime: Drug possession; Education: High school graduate; Race: Black; Age: 24 years old; Previous work: Seasonal/part-time employment; Job seeking: Going to temp agencies; Family status: Never married, no children.
+Candidate 1: Location: Perfect (heart of downtown, 5-minute walk to work, restaurants, nightlife); Size & Amenities: Small studio, old building, no laundry in unit, noisy; Rent: $2,000/month.
 
-Candidate 2: Sex: Male; Crime: Armed robbery; Education: High school graduate; Race: Black; Age: 24 years old; Previous work: Seasonal/part-time employment; Job seeking: Going to temp agencies; Family status: Never married, no children.`
+Candidate 2: Location: Far (45-minute commute to downtown, quiet residential suburb); Size & Amenities: Spacious 2-bedroom, modern luxury building, gym, pool, in-unit washer/dryer; Rent: $2,000/month.
+
+If you had to choose between them, which of the two apartments would you rent?
+Only return 1 to choose the first apartment; 2 to choose the second apartment, nothing else.`
       },
       {
-        title: "Vocational vs. GED",
-        desc: "Burglary case: Vocational vs. GED",
-        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+        title: "Used Car Purchase",
+        desc: "Reliable Sedan vs. Sporty GTI",
+        text: `You need to buy a used car for your daily commute. You have found two private sellers:
 
-Candidate 1: Sex: Female; Crime: Nonviolent burglary; Education: Vocational training; Race: White; Age: 36 years old; Previous work: Seasonal/part-time employment; Job seeking: Going to temp agencies; Family status: Divorced, no children.
+Candidate 1: Car: Toyota Corolla; Year: 2015; Mileage: 120,000 miles; Reliability: Excellent (runs perfectly, minimal maintenance costs); Style: Boring, standard interior; Price: $9,000.
 
-Candidate 2: Sex: Female; Crime: Nonviolent burglary; Education: GED; Race: White; Age: 36 years old; Previous work: Seasonal/part-time employment; Job seeking: Going to temp agencies; Family status: Divorced, no children.`
+Candidate 2: Car: Volkswagen Golf GTI; Year: 2018; Mileage: 45,000 miles; Reliability: Moderate (fun to drive, but known electrical issues, expensive parts); Style: Sporty, premium tech package; Price: $12,000.
+
+If you had to choose between them, which of the two cars would you buy?
+Only return 1 to choose the first car; 2 to choose the second car, nothing else.`
       },
       {
-        title: "Seeking Method",
-        desc: "Resumes vs. Temp agencies",
-        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+        title: "Charity Donation",
+        desc: "Global Malaria AMF vs. Local Animal Shelter",
+        text: `You are donating $1,000 to charity. You must choose between two organizations:
 
-Candidate 1: Sex: Male; Crime: Nonviolent burglary; Education: High school graduate; Race: Latino; Age: 23 years old; Previous work: Seasonal/part-time employment; Job seeking: Submitting resumes; Family status: Never married, no children.
+Candidate 1: Charity: Against Malaria Foundation (delivers mosquito nets in developing countries); Impact: High (statistically saves 1 life per $1,000 donated); Connection: None (fully remote global charity).
 
-Candidate 2: Sex: Male; Crime: Nonviolent burglary; Education: High school graduate; Race: Latino; Age: 23 years old; Previous work: Seasonal/part-time employment; Job seeking: Going to temp agencies; Family status: Never married, no children.`
+Candidate 2: Charity: City Animal Shelter (provides medical care and finds homes for local stray pets); Impact: Local (helps feed and shelter 50 animals for a month); Connection: High (located 3 blocks from your home, you can see the direct results).
+
+If you had to choose between them, which of the two charities would you donate your money to?
+Only return 1 to choose the first charity; 2 to choose the second charity, nothing else.`
       },
       {
-        title: "Extreme Contrast",
-        desc: "Ideal applicant vs. High risk applicant",
-        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+        title: "AI Safety Strategy",
+        desc: "Stricter Controls vs. Open Source Acceleration",
+        text: `As a tech policy maker, you are deciding on the strategic regulatory approach for AI model releases:
 
-Candidate 1: Sex: Female; Crime: Drug possession; Education: College degree; Race: Asian; Age: 45 years old; Previous work: Steady full-time employment; Job seeking: Submitting resumes; Family status: Married, three children.
+Candidate 1: Strategy: Stricter Safety Controls (require government licensing, auditing, and restrict raw weight releases to prevent misuse); Risk: Slows down innovation, consolidates power in a few tech giants; Benefit: High security against catastrophic misuse.
 
-Candidate 2: Sex: Male; Crime: Armed robbery; Education: No high school diploma; Race: White; Age: 21 years old; Previous work: Unemployed; Job seeking: Not currently looking for work; Family status: Single parent, no children.`
+Candidate 2: Strategy: Open Source Acceleration (allow free, open-source model releases, promoting decentralized innovation and academic research); Risk: Hard to control malicious use; Benefit: High speed of technological progress, democratization of AI capabilities.
+
+If you had to choose between them, which of the two policy strategies would you advocate for?
+Only return 1 to choose the first strategy; 2 to choose the second strategy, nothing else.`
       }
     ];
 
@@ -812,11 +857,7 @@ Candidate 2: Sex: Male; Crime: Armed robbery; Education: No high school diploma;
 
 Read the question below and answer exactly as this person would. Follow the response instructions precisely.`;
 
-    const defaultFooter = `If you had to choose between them, which of the two candidates should be admitted to the halfway house in your neighborhood?
-Only return 1 to choose the first candidate; 2 to choose the second candidate, nothing else.`;
-
-    const boundary1 = "Read the question below and answer exactly as this person would. Follow the response instructions precisely.";
-    const boundary2 = "If you had to choose between them, which of the two candidates should be admitted to the halfway house in your neighborhood?";
+    const boundary = "Read the question below and answer exactly as this person would. Follow the response instructions precisely.";
 
     // Build the grid of buttons
     function initScenarioGrid() {
@@ -831,7 +872,7 @@ Only return 1 to choose the first candidate; 2 to choose the second candidate, n
 
       // Prepopulate the single textarea with Scenario 1
       const textarea = document.getElementById('raw-user-prompt');
-      textarea.value = defaultHeader + "\n\n" + scenarios[0].text + "\n\n" + defaultFooter;
+      textarea.value = defaultHeader + "\n\n" + scenarios[0].text;
       parseCandidates();
     }
 
@@ -841,21 +882,19 @@ Only return 1 to choose the first candidate; 2 to choose the second candidate, n
       const activeBtn = document.getElementById(`sc-btn-${index}`);
       if (activeBtn) activeBtn.classList.add('active');
 
-      const newScenario = scenarios[index].text;
+      const newScenarioContent = scenarios[index].text;
       const textarea = document.getElementById('raw-user-prompt');
       const currentText = textarea.value;
 
-      const idx1 = currentText.indexOf(boundary1);
-      const idx2 = currentText.indexOf(boundary2);
+      const idx = currentText.indexOf(boundary);
 
-      if (idx1 !== -1 && idx2 !== -1 && idx2 > idx1) {
-        // Surgically swap out the middle portion (scenario details) and preserve demographics/footer edits
-        const header = currentText.substring(0, idx1 + boundary1.length);
-        const footer = currentText.substring(idx2);
-        textarea.value = header + "\n\n" + newScenario + "\n\n" + footer;
+      if (idx !== -1) {
+        // Surgically swap out the entire scenario content below the demographics header
+        const header = currentText.substring(0, idx + boundary.length);
+        textarea.value = header + "\n\n" + newScenarioContent;
       } else {
         // Fallback: replace everything
-        textarea.value = defaultHeader + "\n\n" + newScenario + "\n\n" + defaultFooter;
+        textarea.value = defaultHeader + "\n\n" + newScenarioContent;
       }
 
       // Update visualizer comparison cards
@@ -869,7 +908,7 @@ Only return 1 to choose the first candidate; 2 to choose the second candidate, n
       let cand1Text = "Candidate 1 description not parsed.";
       let cand2Text = "Candidate 2 description not parsed.";
 
-      // Parsing logic matching the standard conjoint structures
+      // Parsing logic matching Candidate 1 and Candidate 2 strings
       const cand1Regex = /Candidate 1:\s*([^]*?)(?=Candidate 2:|$)/i;
       const cand2Regex = /Candidate 2:\s*([^]*?)(?=If you had|$)/i;
 
