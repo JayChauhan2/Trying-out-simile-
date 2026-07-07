@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.DS_Store
+.venv/
+venv/
+*.log
+socrates-qwen2.5-14b-dpo-mlx-q4/

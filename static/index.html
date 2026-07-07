@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Socrates Conjoint Predictor</title>
+  <!-- Google Fonts: Outfit and Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #07080d;
+      --bg-secondary: #0f111a;
+      --glass-bg: rgba(15, 17, 26, 0.7);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --accent-purple: #8b5cf6;
+      --accent-cyan: #06b6d4;
+      --accent-glow: rgba(6, 182, 212, 0.25);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --text-dark: #4b5563;
+      --card-highlight: rgba(6, 182, 212, 0.12);
+      --card-highlight-border: rgba(6, 182, 212, 0.4);
+      --font-outfit: 'Outfit', sans-serif;
+      --font-inter: 'Inter', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 10% 90%, rgba(6, 182, 212, 0.08) 0%, transparent 40%);
+      background-attachment: fixed;
+      font-family: var(--font-inter);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    header {
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--glass-border);
+      background: rgba(7, 8, 13, 0.85);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-glow {
+      width: 12px;
+      height: 12px;
+      background: var(--accent-cyan);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--accent-cyan);
+      animation: pulse 2s infinite alternate;
+    }
+
+    h1 {
+      font-family: var(--font-outfit);
+      font-size: 22px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 40%, var(--accent-cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.5px;
+    }
+
+    .status-pill {
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      color: #10b981;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      background-color: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 6px #10b981;
+    }
+
+    /* Scenario Selector Grid */
+    .scenario-grid-container {
+      max-width: 1400px;
+      width: 100%;
+      margin: 24px auto 0 auto;
+      padding: 0 40px;
+    }
+
+    .scenario-grid-title {
+      font-family: var(--font-outfit);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 12px;
+    }
+
+    .scenario-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+
+    @media (max-width: 1200px) {
+      .scenario-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    @media (max-width: 768px) {
+      .scenario-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .scenario-btn {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--glass-border);
+      color: var(--text-muted);
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      text-align: left;
+      font-family: var(--font-inter);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .scenario-btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+
+    .scenario-btn.active {
+      background: rgba(6, 182, 212, 0.1);
+      border-color: var(--accent-cyan);
+      color: #fff;
+      box-shadow: 0 0 12px rgba(6, 182, 212, 0.15);
+    }
+
+    .scenario-btn-num {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-dark);
+      font-weight: 700;
+    }
+
+    .scenario-btn.active .scenario-btn-num {
+      color: var(--accent-cyan);
+    }
+
+    /* Main Grid Layout */
+    main {
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 40px 40px 40px;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 32px;
+      flex-grow: 1;
+    }
+
+    @media (max-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .panel-title {
+      font-family: var(--font-outfit);
+      font-size: 18px;
+      font-weight: 700;
+      border-left: 4px solid var(--accent-purple);
+      padding-left: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+
+    input, textarea {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: #fff;
+      font-family: var(--font-inter);
+      font-size: 13px;
+      transition: all 0.25s ease;
+      width: 100%;
+      line-height: 1.5;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 8px rgba(6, 182, 212, 0.15);
+      background: rgba(0, 0, 0, 0.4);
+    }
+
+    textarea {
+      resize: vertical;
+    }
+
+    .btn-submit {
+      background: linear-gradient(135deg, var(--accent-purple) 0%, #7c3aed 100%);
+      border: none;
+      border-radius: 10px;
+      padding: 14px;
+      color: #fff;
+      font-family: var(--font-outfit);
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .btn-submit:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(139, 92, 246, 0.35);
+    }
+
+    .btn-submit:active {
+      transform: translateY(0);
+    }
+
+    .btn-submit:disabled {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+
+    /* Output Styling */
+    .output-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex-grow: 1;
+      color: var(--text-dark);
+      padding: 60px 0;
+      text-align: center;
+      gap: 12px;
+    }
+
+    .output-placeholder svg {
+      width: 40px;
+      height: 40px;
+      stroke: var(--text-dark);
+    }
+
+    .output-container {
+      display: none;
+      flex-direction: column;
+      gap: 20px;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .prediction-header {
+      font-family: var(--font-outfit);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .candidates-comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .candidate-card {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 16px;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .candidate-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: transparent;
+      transition: all 0.3s ease;
+    }
+
+    .candidate-card.selected {
+      background: var(--card-highlight);
+      border-color: var(--card-highlight-border);
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.12);
+      transform: scale(1.01);
+    }
+
+    .candidate-card.selected::before {
+      background: var(--accent-cyan);
+      box-shadow: 0 0 8px var(--accent-cyan);
+    }
+
+    .candidate-badge {
+      display: inline-block;
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--glass-border);
+      color: var(--text-muted);
+    }
+
+    .candidate-card.selected .candidate-badge {
+      background: rgba(6, 182, 212, 0.15);
+      border-color: rgba(6, 182, 212, 0.25);
+      color: var(--accent-cyan);
+    }
+
+    .candidate-title {
+      font-family: var(--font-outfit);
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .candidate-details {
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--text-muted);
+    }
+
+    .candidate-card.selected .candidate-details {
+      color: #fff;
+    }
+
+    .prediction-value-card {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      background: rgba(255, 255, 255, 0.015);
+      border: 1px solid var(--glass-border);
+      padding: 24px;
+      border-radius: 12px;
+      text-align: center;
+      gap: 6px;
+      position: relative;
+    }
+
+    .prediction-large-number {
+      font-family: var(--font-outfit);
+      font-size: 64px;
+      font-weight: 900;
+      line-height: 1;
+      background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-purple) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.25));
+    }
+
+    .stats-row {
+      display: flex;
+      justify-content: space-around;
+      border-top: 1px solid var(--glass-border);
+      padding-top: 16px;
+      margin-top: 10px;
+    }
+
+    .stat-box {
+      text-align: center;
+    }
+
+    .stat-val {
+      font-family: var(--font-outfit);
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .stat-lbl {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    /* Loader */
+    .loader-container {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 0;
+      gap: 16px;
+      flex-grow: 1;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255, 255, 255, 0.04);
+      border-radius: 50%;
+      border-top-color: var(--accent-purple);
+      border-right-color: var(--accent-cyan);
+      animation: spin 1s linear infinite;
+    }
+
+    .loader-text {
+      font-family: var(--font-outfit);
+      font-size: 14px;
+      color: var(--text-muted);
+      animation: pulse 1.5s infinite alternate;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes pulse {
+      from { opacity: 0.6; }
+      to { opacity: 1; }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .history-section {
+      border-top: 1px solid var(--glass-border);
+      padding-top: 16px;
+      margin-top: auto;
+    }
+
+    .history-title {
+      font-family: var(--font-outfit);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    .history-item {
+      background: rgba(0, 0, 0, 0.15);
+      border: 1px solid var(--glass-border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      transition: all 0.2s;
+    }
+
+    .history-item:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo-container">
+      <div class="logo-glow"></div>
+      <h1>Socrates Conjoint Predictor</h1>
+    </div>
+    <div class="status-pill">
+      <div class="status-dot"></div>
+      Local MLX Server Connected
+    </div>
+  </header>
+
+  <!-- Scenario Buttons Grid -->
+  <section class="scenario-grid-container">
+    <div class="scenario-grid-title">Choose Conjoint Experiment Scenario</div>
+    <div class="scenario-grid" id="scenario-btn-grid">
+      <!-- Buttons will be populated dynamically -->
+    </div>
+  </section>
+
+  <main>
+    <!-- Left Panel: Raw Prompt Split Editor -->
+    <section class="panel">
+      <div class="panel-title">Prompt Sections Configuration</div>
+
+      <!-- Configurable Demographic Box -->
+      <div class="input-group">
+        <label for="raw-demographics">1. Respondent Demographics</label>
+        <textarea id="raw-demographics" style="height: 160px;">You are a survey respondent with the following demographic profile:
+- Age: 17
+- Gender: Male
+- Education: Undergraduate degree
+- Employment: Employed as a founder at a startup that creates AI-native strategy games
+- Location: Virginia
+- Income: Negligible
+
+Read the question below and answer exactly as this person would. Follow the response instructions precisely.</textarea>
+      </div>
+
+      <!-- Dynamic Scenario Box -->
+      <div class="input-group">
+        <label for="raw-scenario-text">2. Scenario Details (Candidate Attributes)</label>
+        <textarea id="raw-scenario-text" style="height: 200px;" oninput="parseCandidates()"></textarea>
+      </div>
+
+      <!-- Instruction Footer Box -->
+      <div class="input-group">
+        <label for="raw-question-footer">3. Decision Question & Format Instructions</label>
+        <textarea id="raw-question-footer" style="height: 90px;">If you had to choose between them, which of the two candidates should be admitted to the halfway house in your neighborhood?
+Only return 1 to choose the first candidate; 2 to choose the second candidate, nothing else.</textarea>
+      </div>
+
+      <!-- System Prompt Box -->
+      <div class="input-group">
+        <label for="raw-system-prompt">System Prompt</label>
+        <input type="text" id="raw-system-prompt" value="You are simulating a survey respondent. Answer exactly as instructed, following the specified response format without additional commentary.">
+      </div>
+
+      <button id="predict-btn" class="btn-submit" onclick="runPrediction()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+        Predict Respondent Choice
+      </button>
+    </section>
+
+    <!-- Right Panel: Results & Status -->
+    <section class="panel">
+      <div class="panel-title">Model Response</div>
+
+      <!-- Initial state -->
+      <div id="output-placeholder" class="output-placeholder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+          <line x1="8" y1="21" x2="16" y2="21"/>
+          <line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+        <div>
+          <h3 style="margin-bottom: 4px; font-family: var(--font-outfit);">Awaiting Prediction</h3>
+          <p style="font-size: 13px; color: var(--text-muted);">Select a scenario and click "Predict Respondent Choice"</p>
+        </div>
+      </div>
+
+      <!-- Loading state -->
+      <div id="output-loader" class="loader-container">
+        <div class="spinner"></div>
+        <div class="loader-text">Consulting Socrates 14B model...</div>
+      </div>
+
+      <!-- Result state -->
+      <div id="output-success" class="output-container">
+        <div class="prediction-value-card">
+          <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted);">Predicted Choice</div>
+          <div id="large-result-number" class="prediction-large-number">1</div>
+          <div id="prediction-label" style="font-size: 13px; font-weight: 600; color: #fff;">Candidate 1 Selected</div>
+        </div>
+
+        <div class="prediction-header">Candidate Profiles in Active Scenario</div>
+
+        <div class="candidates-comparison">
+          <div id="card-cand1" class="candidate-card">
+            <span class="candidate-badge">Candidate 1</span>
+            <div class="candidate-title">Option 1</div>
+            <div id="cand1-desc" class="candidate-details">Details of Candidate 1...</div>
+          </div>
+
+          <div id="card-cand2" class="candidate-card">
+            <span class="candidate-badge">Candidate 2</span>
+            <div class="candidate-title">Option 2</div>
+            <div id="cand2-desc" class="candidate-details">Details of Candidate 2...</div>
+          </div>
+        </div>
+
+        <!-- Latency stats -->
+        <div class="stats-row">
+          <div class="stat-box">
+            <div id="stat-latency" class="stat-val">0.00s</div>
+            <div class="stat-lbl">Response Time</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val">Apple MLX</div>
+            <div class="stat-lbl">Engine</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val">14B (4-bit)</div>
+            <div class="stat-lbl">Model Class</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- History log -->
+      <div class="history-section">
+        <div class="history-title">Recent Predictions</div>
+        <div id="history-list" class="history-list">
+          <div style="font-size: 11px; color: var(--text-dark); font-style: italic;">No previous predictions in this session</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    let history = [];
+
+    // Define 15 Conjoint Scenarios
+    const scenarios = [
+      {
+        title: "Baseline (Default)",
+        desc: "Burglary: Latino, 35 vs. Black, 22",
+        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+
+Candidate 1: Sex: Male; Crime: Nonviolent burglary; Education: Vocational training; Race: Latino; Age: 35 years old; Previous work: Seasonal/part-time employment; Job seeking: Going to temp agencies; Family status: Divorced, no children.
+
+Candidate 2: Sex: Male; Crime: Nonviolent burglary; Education: GED; Race: Black; Age: 22 years old; Previous work: Steady full-time employment; Job seeking: Submitting resumes; Family status: Divorced, no children.`
+      },
+      {
+        title: "Crime Severity",
+        desc: "Burglary vs. Violent Assault",
+        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+
+Candidate 1: Sex: Male; Crime: Nonviolent burglary; Education: High school graduate; Race: White; Age: 28 years old; Previous work: Unemployed; Job seeking: Enrolled in job training; Family status: Never married, no children.
+
+Candidate 2: Sex: Male; Crime: Violent assault; Education: High school graduate; Race: White; Age: 28 years old; Previous work: Unemployed; Job seeking: Enrolled in job training; Family status: Never married, no children.`
+      },
+      {
+        title: "Race (Black vs White)",
+        desc: "Controlled match: Black vs. White",
+        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+
+Candidate 1: Sex: Male; Crime: Nonviolent burglary; Education: GED; Race: Black; Age: 30 years old; Previous work: Seasonal/part-time employment; Job seeking: Submitting resumes; Family status: Single parent, one child.
+
+Candidate 2: Sex: Male; Crime: Nonviolent burglary; Education: GED; Race: White; Age: 30 years old; Previous work: Seasonal/part-time employment; Job seeking: Submitting resumes; Family status: Single parent, one child.`
+      },
+      {
+        title: "Race (Latino vs Asian)",
+        desc: "Female drug case: Latino vs. Asian",
+        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+
+Candidate 1: Sex: Female; Crime: Drug possession; Education: High school graduate; Race: Latino; Age: 25 years old; Previous work: Unemployed; Job seeking: Going to temp agencies; Family status: Never married, no children.
+
+Candidate 2: Sex: Female; Crime: Drug possession; Education: High school graduate; Race: Asian; Age: 25 years old; Previous work: Unemployed; Job seeking: Going to temp agencies; Family status: Never married, no children.`
+      },
+      {
+        title: "Gender Comparison",
+        desc: "Male vs. Female Fraud case",
+        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+
+Candidate 1: Sex: Male; Crime: Fraud; Education: College degree; Race: White; Age: 42 years old; Previous work: Steady full-time employment; Job seeking: Submitting resumes; Family status: Married, two children.
+
+Candidate 2: Sex: Female; Crime: Fraud; Education: College degree; Race: White; Age: 42 years old; Previous work: Steady full-time employment; Job seeking: Submitting resumes; Family status: Married, two children.`
+      },
+      {
+        title: "Age Comparison",
+        desc: "Burglary case: 20 vs. 58 yrs old",
+        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+
+Candidate 1: Sex: Male; Crime: Nonviolent burglary; Education: GED; Race: Black; Age: 20 years old; Previous work: Seasonal/part-time employment; Job seeking: Going to temp agencies; Family status: Never married, no children.
+
+Candidate 2: Sex: Male; Crime: Nonviolent burglary; Education: GED; Race: Black; Age: 58 years old; Previous work: Seasonal/part-time employment; Job seeking: Going to temp agencies; Family status: Never married, no children.`
+      },
+      {
+        title: "Employment Status",
+        desc: "Car theft: Unemployed vs. Full-time",
+        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+
+Candidate 1: Sex: Female; Crime: Car theft; Education: Vocational training; Race: Latina; Age: 27 years old; Previous work: Unemployed; Job seeking: Submitting resumes; Family status: Divorced, no children.
+
+Candidate 2: Sex: Female; Crime: Car theft; Education: Vocational training; Race: Latina; Age: 27 years old; Previous work: Steady full-time employment; Job seeking: Submitting resumes; Family status: Divorced, no children.`
+      },
+      {
+        title: "Education Level",
+        desc: "No HS Diploma vs. College Grad",
+        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+
+Candidate 1: Sex: Male; Crime: Drug possession; Education: No high school diploma; Race: White; Age: 31 years old; Previous work: Seasonal/part-time employment; Job seeking: Going to temp agencies; Family status: Single parent, two children.
+
+Candidate 2: Sex: Male; Crime: Drug possession; Education: College degree; Race: White; Age: 31 years old; Previous work: Seasonal/part-time employment; Job seeking: Going to temp agencies; Family status: Single parent, two children.`
+      },
+      {
+        title: "Family Status",
+        desc: "Single vs. Married with Kids",
+        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+
+Candidate 1: Sex: Male; Crime: Nonviolent burglary; Education: Vocational training; Race: Latino; Age: 33 years old; Previous work: Steady full-time employment; Job seeking: Submitting resumes; Family status: Never married, no children.
+
+Candidate 2: Sex: Male; Crime: Nonviolent burglary; Education: Vocational training; Race: Latino; Age: 33 years old; Previous work: Steady full-time employment; Job seeking: Submitting resumes; Family status: Married, three children.`
+      },
+      {
+        title: "Military Veteran",
+        desc: "Assault case: Veteran vs. Unemployed",
+        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+
+Candidate 1: Sex: Male; Crime: Violent assault; Education: High school graduate; Race: White; Age: 40 years old; Previous work: Military veteran; Job seeking: Enrolled in job training; Family status: Married, one child.
+
+Candidate 2: Sex: Male; Crime: Violent assault; Education: High school graduate; Race: White; Age: 40 years old; Previous work: Unemployed (no military service); Job seeking: Enrolled in job training; Family status: Married, one child.`
+      },
+      {
+        title: "Job Seeking Effort",
+        desc: "Job training vs. Not looking",
+        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+
+Candidate 1: Sex: Female; Crime: Fraud; Education: College degree; Race: Asian; Age: 29 years old; Previous work: Unemployed; Job seeking: Enrolled in full-time job training; Family status: Never married, no children.
+
+Candidate 2: Sex: Female; Crime: Fraud; Education: College degree; Race: Asian; Age: 29 years old; Previous work: Unemployed; Job seeking: Not currently looking for work; Family status: Never married, no children.`
+      },
+      {
+        title: "Drug vs. Armed Robbery",
+        desc: "Varying crimes: Drug vs. Violent theft",
+        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+
+Candidate 1: Sex: Male; Crime: Drug possession; Education: High school graduate; Race: Black; Age: 24 years old; Previous work: Seasonal/part-time employment; Job seeking: Going to temp agencies; Family status: Never married, no children.
+
+Candidate 2: Sex: Male; Crime: Armed robbery; Education: High school graduate; Race: Black; Age: 24 years old; Previous work: Seasonal/part-time employment; Job seeking: Going to temp agencies; Family status: Never married, no children.`
+      },
+      {
+        title: "Vocational vs. GED",
+        desc: "Burglary case: Vocational vs. GED",
+        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+
+Candidate 1: Sex: Female; Crime: Nonviolent burglary; Education: Vocational training; Race: White; Age: 36 years old; Previous work: Seasonal/part-time employment; Job seeking: Going to temp agencies; Family status: Divorced, no children.
+
+Candidate 2: Sex: Female; Crime: Nonviolent burglary; Education: GED; Race: White; Age: 36 years old; Previous work: Seasonal/part-time employment; Job seeking: Going to temp agencies; Family status: Divorced, no children.`
+      },
+      {
+        title: "Seeking Method",
+        desc: "Resumes vs. Temp agencies",
+        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+
+Candidate 1: Sex: Male; Crime: Nonviolent burglary; Education: High school graduate; Race: Latino; Age: 23 years old; Previous work: Seasonal/part-time employment; Job seeking: Submitting resumes; Family status: Never married, no children.
+
+Candidate 2: Sex: Male; Crime: Nonviolent burglary; Education: High school graduate; Race: Latino; Age: 23 years old; Previous work: Seasonal/part-time employment; Job seeking: Going to temp agencies; Family status: Never married, no children.`
+      },
+      {
+        title: "Extreme Contrast",
+        desc: "Ideal applicant vs. High risk applicant",
+        text: `There is a new halfway house opening in your neighborhood where recently released felons will live. The director is letting neighbors select applicants to live at the house, and you have the choice between the following two candidates:
+
+Candidate 1: Sex: Female; Crime: Drug possession; Education: College degree; Race: Asian; Age: 45 years old; Previous work: Steady full-time employment; Job seeking: Submitting resumes; Family status: Married, three children.
+
+Candidate 2: Sex: Male; Crime: Armed robbery; Education: No high school diploma; Race: White; Age: 21 years old; Previous work: Unemployed; Job seeking: Not currently looking for work; Family status: Single parent, no children.`
+      }
+    ];
+
+    // Build the grid of buttons
+    function initScenarioGrid() {
+      const grid = document.getElementById('scenario-btn-grid');
+      grid.innerHTML = scenarios.map((s, index) => `
+        <button id="sc-btn-${index}" class="scenario-btn ${index === 0 ? 'active' : ''}" onclick="selectScenario(${index})">
+          <span class="scenario-btn-num">Scenario ${index + 1}</span>
+          <span style="font-weight: 600; font-size: 13px; color:#fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${s.title}</span>
+          <span style="font-size: 10px; color:var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${s.desc}</span>
+        </button>
+      `).join('');
+
+      // Prepopulate Scenario 1
+      selectScenario(0);
+    }
+
+    function selectScenario(index) {
+      // Toggle button active classes
+      document.querySelectorAll('.scenario-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById(`sc-btn-${index}`);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      // Update Scenario text area
+      document.getElementById('raw-scenario-text').value = scenarios[index].text;
+
+      // Update visualizer comparison cards
+      parseCandidates();
+    }
+
+    // Parse Candidate descriptions for visual cards
+    function parseCandidates() {
+      const scenarioText = document.getElementById('raw-scenario-text').value;
+      
+      let cand1Text = "Candidate 1 description not parsed.";
+      let cand2Text = "Candidate 2 description not parsed.";
+
+      // Parsing logic matching the standard conjoint structures
+      const cand1Regex = /Candidate 1:\s*([^]*?)(?=Candidate 2:|$)/i;
+      const cand2Regex = /Candidate 2:\s*([^]*?)(?=$)/i;
+
+      const m1 = scenarioText.match(cand1Regex);
+      const m2 = scenarioText.match(cand2Regex);
+
+      if (m1 && m1[1]) cand1Text = m1[1].trim().replace(/[;.]\s*$/g, '').split(';').join('<br>• ');
+      if (m2 && m2[1]) cand2Text = m2[1].trim().replace(/[;.]\s*$/g, '').split(';').join('<br>• ');
+
+      document.getElementById('cand1-desc').innerHTML = '• ' + cand1Text;
+      document.getElementById('cand2-desc').innerHTML = '• ' + cand2Text;
+    }
+
+    // Run conjoint prediction
+    async function runPrediction() {
+      const systemPrompt = document.getElementById('raw-system-prompt').value;
+      
+      // Concatenate the sections to create the full user prompt
+      const demographics = document.getElementById('raw-demographics').value.trim();
+      const scenario = document.getElementById('raw-scenario-text').value.trim();
+      const question = document.getElementById('raw-question-footer').value.trim();
+
+      const fullUserPrompt = demographics + "\n\n" + scenario + "\n\n" + question;
+      
+      const predictBtn = document.getElementById('predict-btn');
+      
+      // Update UI state to Loading
+      predictBtn.disabled = true;
+      document.getElementById('output-placeholder').style.display = 'none';
+      document.getElementById('output-success').style.display = 'none';
+      document.getElementById('output-loader').style.display = 'flex';
+
+      // Parse candidate text for cards
+      parseCandidates();
+
+      try {
+        const response = await fetch('/api/predict', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            system_prompt: systemPrompt,
+            user_prompt: fullUserPrompt
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('API request failed');
+        }
+
+        const data = await response.json();
+        const pred = data.prediction.trim();
+
+        // Update UI state to Success
+        document.getElementById('output-loader').style.display = 'none';
+        document.getElementById('output-success').style.display = 'flex';
+
+        // Highlight selected card
+        const cardCand1 = document.getElementById('card-cand1');
+        const cardCand2 = document.getElementById('card-cand2');
+        const resultNumber = document.getElementById('large-result-number');
+        const resultLabel = document.getElementById('prediction-label');
+        
+        cardCand1.classList.remove('selected');
+        cardCand2.classList.remove('selected');
+
+        resultNumber.innerText = pred;
+
+        if (pred === '1') {
+          cardCand1.classList.add('selected');
+          resultLabel.innerText = "Candidate 1 Selected";
+        } else if (pred === '2') {
+          cardCand2.classList.add('selected');
+          resultLabel.innerText = "Candidate 2 Selected";
+        } else {
+          resultLabel.innerText = "Custom Output Returned";
+        }
+
+        document.getElementById('stat-latency').innerText = data.latency_seconds.toFixed(2) + 's';
+
+        // Add to history
+        addHistoryItem(pred, data.latency_seconds);
+
+      } catch (err) {
+        alert('Error: ' + err.message);
+        document.getElementById('output-loader').style.display = 'none';
+        document.getElementById('output-placeholder').style.display = 'flex';
+      } finally {
+        predictBtn.disabled = false;
+      }
+    }
+
+    function addHistoryItem(pred, latency) {
+      const list = document.getElementById('history-list');
+      if (history.length === 0) {
+        list.innerHTML = ''; // Clear placeholder
+      }
+
+      // Read active scenario title
+      const activeBtn = document.querySelector('.scenario-btn.active');
+      const scenarioTitle = activeBtn ? activeBtn.querySelector('span:nth-child(2)').innerText : "Custom Scenario";
+      
+      const item = {
+        scenario: scenarioTitle,
+        pred,
+        time: new Date().toLocaleTimeString()
+      };
+      
+      history.unshift(item);
+      if (history.length > 5) history.pop();
+
+      list.innerHTML = history.map((h, i) => `
+        <div class="history-item">
+          <div><strong>${h.scenario}:</strong> Predicted Candidate <strong>${h.pred}</strong></div>
+          <div style="color: var(--accent-cyan)">${h.time}</div>
+        </div>
+      `).join('');
+    }
+
+    // Initialize grid on load
+    initScenarioGrid();
+  </script>
+</body>
+</html>
